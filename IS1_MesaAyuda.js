@@ -101,28 +101,26 @@ app.get('/api/cliente', (req,res) => {
 */  
 app.post('/api/loginCliente', (req,res) => {
 
-    const { id } = req.body;
+    const { contacto } = req.body;
     const {password} = req.body;
 
-    console.log("loginCliente: id("+id+") password ("+password+")");
+    console.log("loginCliente: id("+contacto+") password ("+password+")");
 
     if (!password) {
         res.status(400).send({response : "ERROR" , message : "Password no informada"});
         return;
     }    
-    if (!id) {
+    if (!contacto) {
         res.status(400).send({response : "ERROR" , message : "id no informado"});
         return;
     }    
+    const paramsScan = {
+        TableName: "cliente",
+        FilterExpression : 'contacto = :contacto',
+        ExpressionAttributeValues: {':contacto': contacto}
+    };
 
-    let getClienteByKey = function () {
-        var params = {
-            TableName: "cliente",
-            Key: {
-                "id" : id
-            }
-        };
-        docClient.get(params, function (err, data) {
+     docClient.scan(paramsScan, function (err, data) {
             if (err) {
                 res.status(400).send(JSON.stringify({response : "ERROR", message : "DB access error "+err}));
             }
@@ -130,14 +128,15 @@ app.post('/api/loginCliente', (req,res) => {
                 if (Object.keys(data).length == 0) {
                     res.status(400).send({response : "ERROR" , message : "Cliente invalido"});
                 } else {
-                    const paswd=jsonParser('password',data.Item);
-                    const activo=jsonParser('activo',data.Item);
-                    const id=jsonParser('id',data.Item);
-                    const contacto=jsonParser('contacto',data.Item);
+                    const FirstElem = data.Items[0]
+                    const paswd=jsonParser('password',FirstElem);
+                    const activo=jsonParser('activo',FirstElem);
+                    const id=jsonParser('id',FirstElem);
+                    const contacto=jsonParser('contacto',FirstElem);
                     if (password == paswd) {
                         if (activo == true) {
-                            const nombre=jsonParser('nombre',data.Item);
-                            const fecha_ultimo_ingreso=jsonParser('fecha_ultimo_ingreso',data.Item);
+                            const nombre=jsonParser('nombre',FirstElem);
+                            const fecha_ultimo_ingreso=jsonParser('fecha_ultimo_ingreso',FirstElem);
                             res.status(200).send(JSON.stringify({response : "OK", "id" : id, "nombre" : nombre, "contacto" : contacto, "fecha_ultimo_ingreso": fecha_ultimo_ingreso}));    
                         } else {
                             res.status(400).send(JSON.stringify({response : "ERROR", message : "Cliente no activo"}));    
@@ -147,11 +146,48 @@ app.post('/api/loginCliente', (req,res) => {
                     }    
             }    
             }
-        })
-    }
-    getClienteByKey();
+        });
+    });
+    //getClienteByKey();
 
-});
+//});
+    // let getClienteByKey = function () {
+    //     var params = {
+    //         TableName: "cliente",
+    //         Key: {
+    //             "id" : id
+    //         }
+    //     };
+//     docClient.get(params, function (err, data) {
+//             if (err) {
+//                 res.status(400).send(JSON.stringify({response : "ERROR", message : "DB access error "+err}));
+//             }
+//             else {
+//                 if (Object.keys(data).length == 0) {
+//                     res.status(400).send({response : "ERROR" , message : "Cliente invalido"});
+//                 } else {
+//                     const paswd=jsonParser('password',data.Item);
+//                     const activo=jsonParser('activo',data.Item);
+//                     const id=jsonParser('id',data.Item);
+//                     const contacto=jsonParser('contacto',data.Item);
+//                     if (password == paswd) {
+//                         if (activo == true) {
+//                             const nombre=jsonParser('nombre',data.Item);
+//                             const fecha_ultimo_ingreso=jsonParser('fecha_ultimo_ingreso',data.Item);
+//                             res.status(200).send(JSON.stringify({response : "OK", "id" : id, "nombre" : nombre, "contacto" : contacto, "fecha_ultimo_ingreso": fecha_ultimo_ingreso}));    
+//                         } else {
+//                             res.status(400).send(JSON.stringify({response : "ERROR", message : "Cliente no activo"}));    
+//                         }
+//                     } else {
+//                        res.status(400).send(JSON.stringify({response : "ERROR" , message : "usuario incorrecto"}));
+//                     }    
+//             }    
+//             }
+//         })
+//     }
+//     getClienteByKey();
+
+// });
 
 
 /*-----------
