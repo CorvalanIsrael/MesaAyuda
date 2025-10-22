@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!--------------------------------------------------------------------------------------------------------------------------->
+<!-- RegistroClient.html                                                                                                    -->                                                                                                      
+<!-- Taller de maquetado - aplicación ejemplo Mesa de Ayuda                                                                -->                                                                                                      
+<!-- Dr. Pedro E. Colla                                                                                                    -->                                                                                                      
+<!-- UADER - Ingeniería de Software I                                                                                      -->                                                                                                      
+<!--------------------------------------------------------------------------------------------------------------------------->
+
+<html Lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <title>Registro de Nuevo Cliente</title>
+
+        <style type="text/css"> 
+            label { 
+              font: 18px; 
+            } 
+            form {
+                width: 500px;
+                border: 1px solid black; 
+            }
+            input { 
+              margin: 7px; 
+              padding: 2px 
+            } 
+            .form-label{
+                margin-bottom:0!important;
+            }     
+            .txt {
+                display: inline-block;
+                  width: 80%;
+                  outline: none;
+                margin:0;
+            }
+            .error {
+                color: red;
+                text-align: center;
+            }
+        </style> 
+    </head>
+<body>
+    <!-- Area de encabezados fijos -->
+    <center><img src="HelpDeskGirl.png" alt="Nuestra imagen corporativa" style="width:200px;height:150px;"></center>
+    <center><h1>Sistema de Mesa de Ayuda</h1></center>
+
+    <!-- Formulario para enviar los datos -->    
+    <center>
+    <form class="form" method="POST" style="background-color:#d8f7cf" width="100px" border="1">
+        <br>
+        <center><h4>Registro de Nuevo Cliente</h4></center>
+        <table>
+            <tr style="height:10px;">
+                <td><label for="nombreForm" class="form-label">Nombre</label></td>               
+            </tr>
+            <tr style="height:10px;">    
+                <td><input class="txt" name="nombre" type="text" placeholder="Nombre" required><br></td>
+            </tr>
+            <tr style="height:10px;">
+                <td><label for="apellidoForm" class="form-label">Apellido</label></td>               
+            </tr>
+            <tr style="height:10px;">    
+                <td><input class="txt" name="apellido" type="text" placeholder="Apellido" required><br></td>
+            </tr>
+            <tr style="height:10px;">
+                <td><label for="emailForm" class="form-label">Correo Electrónico</label></td>               
+            </tr>
+            <tr style="height:10px;">    
+                <td><input class="txt" name="email" type="email" placeholder="Correo Electrónico" required><br></td>
+            </tr>
+            <tr style="height:10px;">
+                <td><label for="passForm" class="form-label">Contraseña</label></td>               
+            </tr>
+            <tr>    
+                <td><input class="txt" name="password" type="password" placeholder="Contraseña" required><br></td>
+            </tr>
+        </table>
+        
+        <p>¡Todo lo que Ud. diga o haga en éste sistema podrá ser usado en su contra!</p>
+        <input name="termscondition" type="checkbox" required> Acepto los términos y condiciones del ingreso al sistema (S.E.u.O)</p></br>
+        <button type="submit">Registrarse</button>
+        <p>¿Ya tienes una cuenta? <a href="loginClient.html">Iniciar Sesión</a></p>
+    </form>
+    </center>
+
+    <!-- Area para mostrar mensajes -->
+    <p><br/><center><span id="resultado" class="error"></span></center></p>
+    
+    <!-- Script a ser ejecutado --> 
+    <script src="RegistroClient.js" type="module"></script>
+    
+
+</body>
+</html>
