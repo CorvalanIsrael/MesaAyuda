@@ -12,11 +12,11 @@ formE1.addEventListener('submit', event => {
     const resultadoEl = document.getElementById('resultado');
     
     // Validar contraseña
-    if (data.password.length < 8) {
-        resultadoEl.style.color = "RED";
-        resultadoEl.textContent = 'La contraseña debe tener al menos 8 caracteres';
-        return;
-    }
+    // if (data.password.length < 8) {
+    //     resultadoEl.style.color = "RED";
+    //     resultadoEl.textContent = 'La contraseña debe tener al menos 8 caracteres';
+    //     return;
+    // }
 
     // Validar términos y condiciones
     if (data.termscondition !== 'on') {
@@ -34,7 +34,7 @@ formE1.addEventListener('submit', event => {
     const nuevoCliente = {
         "contacto": data.email,
         "password": data.password,
-        "nombre": `${data.nombre} ${data.apellido}`
+        "nombre"  : data.nombre
     };
 
     const options = {
