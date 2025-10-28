@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--------------------------------------------------------------------------------------------------------------------------->
-<!-- loginClient.html                                                                                                      -->                                                                                                      
-<!-- Taller de maquetado - aplicación ejemplo Mesa de Ayuda                                                                -->                                                                                                      
-<!-- Dr. Pedro E. Colla                                                                                                    -->                                                                                                      
-<!-- UADER - Ingeniería de Software I                                                                                      -->                                                                                                      
+<!-- loginClient.html                                                                                                      -->
+<!-- Taller de maquetado - aplicación ejemplo Mesa de Ayuda                                                                -->
+<!-- Dr. Pedro E. Colla                                                                                                    -->
+<!-- UADER - Ingeniería de Software I                                                                                      -->
 <!--------------------------------------------------------------------------------------------------------------------------->
 
 <html Lang="en">
@@ -14,86 +14,161 @@
         <title>POST Form Data as JSON with JavaScript Fetch API</title>
 
         <style type="text/css"> 
-  
-            label { 
-              font-size: 18px; 
-            } 
-            form {
-                width: 500px;
-                border: 1px solid black; 
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                background-color: #f5f5f5;
             }
-            input { 
-              margin: 7px; 
-              padding: 2px 
-            } 
-            .form-label{
-                margin-bottom:0!important;
-            }     
+            
+            .container {
+                width: 500px;
+                margin: 0 auto;
+                background-color: #d8f7cf;
+                border: 1px solid #2e8b94;
+                border-radius: 5px;
+                padding: 20px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+            
+            h1, h2 {
+                text-align: center;
+                color: #333;
+            }
+            
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 15px 0;
+            }
+            
+            td {
+                padding: 8px;
+                vertical-align: top;
+            }
+            
+            .form-label {
+                font-weight: bold;
+                color: #333;
+            }
+            
             .txt {
-                display: inline-block;
-                  width: 80%;
-                  outline: none;
-                margin:0;
+                width: 95%;
+                padding: 8px;
+                border: 1px solid #2e8b94;
+                border-radius: 3px;
+                font-size: 14px;
+            }
+            
+            button {
+                background-color: #2e8b94;
+                color: white;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 3px;
+                cursor: pointer;
+                font-size: 16px;
+                display: block;
+                margin: 15px auto;
+            }
+            
+            button:hover {
+                background-color: #1f5e60;
+            }
+            
+            .error {
+                color: red;
+                text-align: center;
+                font-size: 14px;
+                margin: 10px 0;
+            }
+            
+            a {
+                color: #2e8b94;
+                text-decoration: none;
+            }
+            
+            a:hover {
+                text-decoration: underline;
+            }
+            
+            .terms {
+                text-align: center;
+                margin: 15px 0;
+            }
+            
+            .header-image {
+                text-align: center;
+                margin-bottom: 15px;
+            }
+            
+            #registroLink {
+                display: none;
+                text-align: center;
+                margin: 15px 0;
             }
         </style> 
     </head>
 <body>
     <!-- Area de encabezados fijos -->
-    <!-- close the browser and start it with the --disable-web-security and --user-data-dir flags-->
-    <center><img src="HelpDeskGirl.png" alt="Nuestra imagen corporativa" style="width:200px;height:150px;"></center>
-    <center>
+    <div class="container">
+        <div class="header-image">
+            <img src="HelpDeskGirl.png" alt="Nuestra imagen corporativa" style="width:200px;height:150px;">
+        </div>
         <h1>Sistema de Mesa de Ayuda</h1>
         <h2>Iniciar sesión</h2>
-    </center>
 
-    <!-- Formulario para enviar los datos -->    
-    <center>
-    <form class="form" method="GET" style="background-color:#d8f7cf" width="100px" border="1">
-        <br>
-        <!-- <center><h4>Ingrese su identificación de usuario y password</h4></center> -->
-        <table>
-            <tr style="height:10px;">
-                <td><label for="cliForm" class="form-label">Usuario</label></td>               
-            </tr>
-            <tr style="height:10px;">    
-                <td><input class="txt" name="contacto" type="text" placeholder="Correo"><br></td>
-            </tr>
-            <tr><td>&nbsp;</td></tr>
-            <tr style="height:10px;">
-                <td><label for="passForm" class="form-label">Contraseña</label></td>               
-            </tr>
-            <tr>    
-                <td><input class="txt" name="password" type="password" placeholder="Contraseña"><br></td>
-            </tr>
-            <tr><td><span id="resultado1"></span></td></tr>
-            <tr><td><br></td></tr>
-            <tr>
-                <td><center><a href="http://127.0.0.1:5500/loginClient.html">¿Olvidaste tu contraseña?</a></center></td>
+        <!-- Formulario para enviar los datos -->
+        <form class="form" method="GET">
+            <table>
+                <tr>
+                    <td width="30%"><label for="contacto" class="form-label">Email</label></td>
+                    <td width="70%">
+                        <input class="txt" name="contacto" type="text" placeholder="Email">
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <span id="resultado1" class="error"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="password" class="form-label">Contraseña</label></td>
+                    <td>
+                        <input class="txt" name="password" type="password" placeholder="Contraseña">
+                    </td>
+                </tr>
+            </table>
 
-            </tr>
-            <tr>
-                <td><center><span>¿No tienes una cuenta? </span><a href="registroClient.html">Registrate</a></center></td>
-            </tr>
-            <tr><td><br><input name="termscondition" type="checkbox"> Acepto los términos y condiciones del ingreso al sistema (S.E.u.O)</p></br></td></tr>
-            <tr><td><span id="resultado2"></span></td></tr>
+            <div style="text-align: center; margin: 10px 0;">
+                <a href="resetpassword.html">¿Olvidaste tu contraseña?</a>
+            </div>
 
-        </table>
-        
-        <button type="submit">< Ingresar</button>
-        
-        
-    <p> </p>
-    </form>
-    <p>¡Todo lo que Ud. diga o haga en éste sistema podrá ser usado en su contra!</p>
-    </center>
+            <!-- Este div estará oculto inicialmente y se mostrará solo después de un login fallido -->
+            <div id="registroLink">
+                <span>¿No tienes una cuenta?</span> <a href="RegistroClient.html">Registrate</a>
+            </div>
+
+            <div class="terms">
+                <input type="checkbox" name="termscondition"> 
+                <label>Acepto los términos y condiciones</label>
+            </div>
+            
+            <span id="resultado2" class="error"></span>
+
+            <button type="submit">Ingresar</button>
+
+            <p style="font-size: 13px; text-align: center; margin-top: 20px;">
+                ¡Todo lo que Ud. diga o haga en éste sistema podrá ser usado en su contra!
+            </p>
+        </form>
+    </div>
 
     <!-- Area para crear contenido dinámico -->
-    
     <div id="app"></div>
     <ul id="listado"></ul>
-    
-    <!-- Script a ser ejecutado --> 
-    <script src="loginClient.js" type="module"></script>
-    
 
+    <!-- Script a ser ejecutado -->
+    <script src="loginClient.js" type="module"></script>
 </body>
+</html>

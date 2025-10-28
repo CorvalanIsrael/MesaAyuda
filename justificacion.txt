@@ -1,0 +1,4 @@
+Se adjuntan en el ZIP solo la carpeta conteniendo el HTML y los archivos de Mesa de Ayuda que contiene el servidor
+
+el repositorio completo actualizado se encuentra en: 
+https://github.com/CorvalanIsrael/MesaAyuda.git

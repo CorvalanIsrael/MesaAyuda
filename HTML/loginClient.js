@@ -11,6 +11,9 @@ formE1.addEventListener('submit', (event) => {
 	console.log('Application Server: Revisa el valor del form:');
 	console.log(data);
 
+	// Ocultar el enlace de registro al iniciar un nuevo intento de login
+	document.getElementById('registroLink').style.display = 'none';
+
 	/*---
         Realiza validaciones en los datos del formulario antes de procesar
         */
@@ -20,7 +23,7 @@ formE1.addEventListener('submit', (event) => {
 		document.getElementById('resultado1').style.color = 'RED';
 		document.getElementById('resultado1').style.textAlign = 'center';
 		document.getElementById('resultado1').textContent =
-			'Debe informar correo y password para  completar el acceso';
+			'Debe informar usuario y password para  completar el acceso';
 		return;
 	}
 
@@ -83,8 +86,6 @@ formE1.addEventListener('submit', (event) => {
 			body: JSON.stringify(login),
 	};
 
-
-
 	 	console.log('API REST:' + RESTAPI.loginCliente);
 	    console.log(login);
 	    console.log('login(' + JSON.stringify(login) + ')');
@@ -93,7 +94,6 @@ formE1.addEventListener('submit', (event) => {
 	    var APIoptions = options;
 
 	};
-
 
 	/*----------------------------------------------------------------------*/
 	/*---- Typicode utilizar id 803a62c8-78c8-4b63-9106-73af216d504b -------*/
@@ -187,6 +187,17 @@ formE1.addEventListener('submit', (event) => {
 				document.getElementById('resultado1').style.color = 'RED'; /*--Fix hecho por  Germán Lombardi IS1-2025 */
 				document.getElementById('resultado1').textContent =
 					'Error de login, intente nuevamente';                  /*--Fix hecho por  Germán Lombardi IS1-2025 */
+				
+				// Mostrar el enlace de registro después de un login fallido
+				document.getElementById('registroLink').style.display = 'block';
 			}
+		})
+		.catch((error) => {
+			console.error('Error en la solicitud:', error);
+			document.getElementById('resultado1').style.color = 'RED';
+			document.getElementById('resultado1').textContent = 'Error de conexión con el servidor';
+			
+			// Mostrar el enlace de registro también en caso de error de conexión
+			document.getElementById('registroLink').style.display = 'block';
 		});
 });

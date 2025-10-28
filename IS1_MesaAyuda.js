@@ -111,7 +111,7 @@ app.post('/api/loginCliente', (req,res) => {
         return;
     }    
     if (!contacto) {
-        res.status(400).send({response : "ERROR" , message : "id no informado"});
+        res.status(400).send({response : "ERROR" , message : "contacto no informado"});
         return;
     }    
     const paramsScan = {
