@@ -76,10 +76,19 @@ app.use(express.json());
 /*-----------
 función para hacer el parse de un archivo JSON
 */
-function jsonParser(keyValue,stringValue) {
-    var string = JSON.stringify(stringValue);
-    var objectValue = JSON.parse(string);
-    return objectValue[keyValue];
+function jsonParser(keyValue, stringValue) {
+    if (stringValue === undefined || stringValue === null) {
+        console.log("Warning: jsonParser recibió valor nulo/undefined para la clave:", keyValue);
+        return null;
+    }
+    try {
+        var string = JSON.stringify(stringValue);
+        var objectValue = JSON.parse(string);
+        return objectValue[keyValue];
+    } catch (error) {
+        console.log("Error en jsonParser:", error);
+        return null;
+    }
 }
 
 /*-------------------------------------------------------------------------------------------
@@ -94,60 +103,70 @@ app.get('/api/cliente', (req,res) => {
     console.log("API cliente: OK");
 });
 
-
 /*---
   /api/loginCliente
-  Esta API permite acceder a un cliente por ID y comparar la password pasada en un JSON en el cuerpo con la indicada en el DB
-*/  
-app.post('/api/loginCliente', (req,res) => {
+  Esta API permite acceder a un cliente por contacto (email) y comparar la password
+*/
+app.post('/api/loginCliente', (req, res) => {
+    const { contacto, password } = req.body;
 
-    const { contacto } = req.body;
-    const {password} = req.body;
+    console.log(`loginCliente: contacto(${contacto}) password(${password})`);
 
-    console.log("loginCliente: id("+contacto+") password ("+password+")");
-
-    if (!password) {
-        res.status(400).send({response : "ERROR" , message : "Password no informada"});
-        return;
-    }    
     if (!contacto) {
-        res.status(400).send({response : "ERROR" , message : "contacto no informado"});
-        return;
-    }    
+        return res.status(400).send({ response: "ERROR", message: "Contacto no informado" });
+    }
+    if (!password) {
+        return res.status(400).send({ response: "ERROR", message: "Password no informada" });
+    }
+
     const paramsScan = {
         TableName: "cliente",
-        FilterExpression : 'contacto = :contacto',
-        ExpressionAttributeValues: {':contacto': contacto}
+        FilterExpression: 'contacto = :contacto',
+        ExpressionAttributeValues: { ':contacto': contacto }
     };
 
-     docClient.scan(paramsScan, function (err, data) {
-            if (err) {
-                res.status(400).send(JSON.stringify({response : "ERROR", message : "DB access error "+err}));
+    docClient.scan(paramsScan, function (err, data) {
+        if (err) {
+            console.error("Error en DB:", err);
+            return res.status(400).send({ response: "ERROR", message: "DB access error " + err });
+        }
+
+        // Verificación más robusta
+        if (!data.Items || data.Items.length === 0) {
+            return res.status(400).send({ response: "ERROR", message: "Cliente inválido" });
+        }
+
+        const cliente = data.Items[0];
+        console.log("Datos obtenidos de DynamoDB:", cliente);
+
+        // Acceso directo a las propiedades - ELIMINAR jsonParser
+        const paswd = cliente.password;
+        const activo = cliente.activo;
+        const id = cliente.id;
+        const nombre = cliente.nombre;
+        const fecha_ultimo_ingreso = cliente.fecha_ultimo_ingreso;
+
+        if (!paswd) {
+            return res.status(400).send({ response: "ERROR", message: "El cliente no tiene password registrada" });
+        }
+
+        if (password === paswd) {
+            if (activo === true) {
+                return res.status(200).send({
+                    response: "OK",
+                    id,
+                    nombre,
+                    contacto,
+                    fecha_ultimo_ingreso
+                });
+            } else {
+                return res.status(400).send({ response: "ERROR", message: "Cliente no activo" });
             }
-            else {
-                if (Object.keys(data).length == 0) {
-                    res.status(400).send({response : "ERROR" , message : "Cliente invalido"});
-                } else {
-                    const FirstElem = data.Items[0]
-                    const paswd=jsonParser('password',FirstElem);
-                    const activo=jsonParser('activo',FirstElem);
-                    const id=jsonParser('id',FirstElem);
-                    const contacto=jsonParser('contacto',FirstElem);
-                    if (password == paswd) {
-                        if (activo == true) {
-                            const nombre=jsonParser('nombre',FirstElem);
-                            const fecha_ultimo_ingreso=jsonParser('fecha_ultimo_ingreso',FirstElem);
-                            res.status(200).send(JSON.stringify({response : "OK", "id" : id, "nombre" : nombre, "contacto" : contacto, "fecha_ultimo_ingreso": fecha_ultimo_ingreso}));    
-                        } else {
-                            res.status(400).send(JSON.stringify({response : "ERROR", message : "Cliente no activo"}));    
-                        }
-                    } else {
-                       res.status(400).send(JSON.stringify({response : "ERROR" , message : "usuario incorrecto"}));
-                    }    
-            }    
-            }
-        });
+        } else {
+            return res.status(400).send({ response: "ERROR", message: "Usuario o contraseña incorrecta" });
+        }
     });
+});
     //getClienteByKey();
 
 //});
@@ -222,20 +241,55 @@ app.post('/api/getCliente/:id', (req,res) => {
 } );
 
 /*---------
-Función para realizar el SCAN de un DB de cliente usando contacto como clave para la búsqueda (no es clave formal del DB)
+  /api/getClienteByContacto
+  Esta API permite acceder a un cliente dado su contacto (email)
+*/
+app.post('/api/getClienteByContacto', (req, res) => {
+    const { contacto } = req.body;
+    console.log("getClienteByContacto: contacto(" + contacto + ")");
+    
+    if (!contacto) {
+        return res.status(400).send({ response: "ERROR", message: "Contacto no informado" });
+    }
+
+    const paramsScan = {
+        TableName: "cliente",
+        FilterExpression: 'contacto = :contacto',
+        ExpressionAttributeValues: { ':contacto': contacto }
+    };
+
+    docClient.scan(paramsScan, function (err, data) {
+        if (err) {
+            return res.status(400).send({ response: "ERROR", message: "DB access error " + err });
+        }
+
+        if (!data.Items || data.Items.length === 0) {
+            return res.status(400).send({ response: "ERROR", message: "Cliente no existe" });
+        }
+
+        const cliente = data.Items[0];
+        res.status(200).send({
+            response: "OK",
+            cliente: cliente
+        });
+    });
+});
+
+/*---------
+Función para realizar el SCAN de un DB de cliente usando contacto como clave para la búsqueda
 */
 async function scanDb(contacto) {
     var docClient = new AWS.DynamoDB.DocumentClient();
-    const scanKey=contacto;
-    const paramsScan = { // ScanInput
-      TableName: "cliente", // required
-      Select: "ALL_ATTRIBUTES" || "ALL_PROJECTED_ATTRIBUTES" || "SPECIFIC_ATTRIBUTES" || "COUNT",
-      FilterExpression : 'id = :contacto',
-      ExpressionAttributeValues : {':contacto' : scanKey}
-    };      
+    const scanKey = contacto;
+    const paramsScan = {
+        TableName: "cliente",
+        Select: "ALL_ATTRIBUTES",
+        FilterExpression: 'id = :contacto',  // CAMBIADO: id -> contacto
+        ExpressionAttributeValues: { ':contacto': scanKey }
+    };
     var objectPromise = await docClient.scan(paramsScan).promise().then((data) => {
-          return data.Items 
-    });  
+        return data.Items
+    });
     return objectPromise;
 }
 
@@ -243,68 +297,80 @@ async function scanDb(contacto) {
 addCliente
 Revisa si el contacto (e-mail) existe y en caso que no da de alta el cliente generando un id al azar
 */
-app.post('/api/addCliente', (req,res) => {
+/*----
+addCliente
+Revisa si el contacto (e-mail) existe y en caso que no da de alta el cliente
+*/
+app.post('/api/addCliente', (req, res) => {
+    const { contacto, password, nombre } = req.body;
+    console.log(`addCliente: contacto(${contacto}) nombre(${nombre}) password(${password})`);
 
-    const {contacto} = req.body;
-    const {password} = req.body;
-    const {nombre}   = req.body;
-    console.log("addCliente: contacto("+contacto+") nombre("+nombre+") password("+password+")");
-    
     if (!password) {
-        res.status(400).send({response : "ERROR" , message: "Password no informada"});
-        return;
+        return res.status(400).send({ response: "ERROR", message: "Password no informada" });
     }
     if (!nombre) {
-        res.status(400).send({response : "ERROR", message : "Nombre no informado"});
-        return;
+        return res.status(400).send({ response: "ERROR", message: "Nombre no informado" });
+    }
+    if (!contacto) {
+        return res.status(400).send({ response: "ERROR", message: "Contacto no informado" });
     }
 
-    if (!contacto){
-        res.status(400).send({response : "ERROR" , message : "Contacto no informado"});
-        return;
-    } 
+    // Usar scan para buscar por contacto (email) en lugar de por id
+    const paramsScan = {
+        TableName: "cliente",
+        FilterExpression: 'contacto = :contacto',
+        ExpressionAttributeValues: { ':contacto': contacto }
+    };
 
-    scanDb(contacto)
-    .then(resultDb => {
-      if (Object.keys(resultDb).length != 0) {
-        res.status(400).send({response : "ERROR" , message : "Cliente ya existe"});
-        return;
-      } else {
+    docClient.scan(paramsScan, function (err, data) {
+        if (err) {
+            console.error("Error en scan:", err);
+            return res.status(400).send({ response: "ERROR", message: "Error verificando cliente existente" });
+        }
+
+        console.log("Resultado del scan:", data.Items);
+
+        // Verificar si ya existe un cliente con ese contacto
+        if (data.Items && data.Items.length > 0) {
+            return res.status(400).send({ response: "ERROR", message: "Cliente ya existe" });
+        }
+
+        // Crear nuevo cliente
         var hoy = new Date();
         var dd = String(hoy.getDate()).padStart(2, '0');
-        var mm = String(hoy.getMonth() + 1).padStart(2, '0'); //January is 0!
+        var mm = String(hoy.getMonth() + 1).padStart(2, '0');
         var yyyy = hoy.getFullYear();
         hoy = dd + '/' + mm + '/' + yyyy;
-    
+
         const newCliente = {
-         id                    : crypto.randomUUID(),
-         contacto              : contacto,
-         nombre                : nombre,
-         password              : password,
-         activo                : true,
-         registrado            : true,
-         primer_ingreso        : false,
-         fecha_alta            : hoy,
-         fecha_cambio_password : hoy,
-         fecha_ultimo_ingreso  : hoy,
+            id: crypto.randomUUID(),
+            contacto: contacto,
+            nombre: nombre,
+            password: password,
+            activo: true,
+            registrado: true,
+            primer_ingreso: false,
+            fecha_alta: hoy,
+            fecha_cambio_password: hoy,
+            fecha_ultimo_ingreso: hoy,
         };
-    
+
         const paramsPut = {
-          TableName: "cliente",
-          Item: newCliente,
-          ConditionExpression:'attribute_not_exists(id)',
+            TableName: "cliente",
+            Item: newCliente,
+            ConditionExpression: 'attribute_not_exists(id)',
         };
 
         docClient.put(paramsPut, function (err, data) {
             if (err) {
-                res.status(400).send(JSON.stringify({response : "ERROR", message : "DB error" + err}));
+                console.error("Error en put:", err);
+                return res.status(400).send({ response: "ERROR", message: "DB error: " + err.message });
             } else {
-                res.status(200).send(JSON.stringify({response : "OK", "cliente": newCliente}));
+                console.log("Cliente creado exitosamente:", newCliente);
+                return res.status(200).send({ response: "OK", cliente: newCliente });
             }
         });
-    }
     });
-
 });
 /*----------
 /api/updateCliente
@@ -393,68 +459,67 @@ app.post('/api/updateCliente', (req,res) => {
 });
 /*-------
 /api/resetCliente
-Permite cambiar la password de un cliente
+Permite cambiar la password de un cliente usando su contacto (email)
 */
-app.post('/api/resetCliente', (req,res) => {
-    
-    const {id}       = req.body;
-    const {password} = req.body;
- 
-    if (!id) {
-        res.status(400).send({response : "ERROR" , message: "Id no informada"});
+app.post('/api/resetCliente', (req, res) => {
+    const { contacto, password } = req.body;
+
+    if (!contacto) {
+        res.status(400).send({ response: "ERROR", message: "Contacto no informado" });
         return;
     }
 
     if (!password) {
-        res.status(400).send({response : "ERROR" , message: "Password no informada"});
+        res.status(400).send({ response: "ERROR", message: "Password no informada" });
         return;
     }
 
-    var params = {
+    // Primero buscar el cliente por contacto
+    const paramsScan = {
         TableName: "cliente",
-        Key: {
-            "id" : id
-            //test use "id": "0533a95d-7eef-4c6b-b753-1a41c9d1fbd0"   
-             }
-        };
-        
-    docClient.get(params, function (err, data) {
-        if (err)  {
-            res.status(400).send(JSON.stringify({response : "ERROR", message : "DB access error "+ null}));
-            return;
-        } else {
+        FilterExpression: 'contacto = :contacto',
+        ExpressionAttributeValues: { ':contacto': contacto }
+    };
 
-            if (Object.keys(data).length == 0) {
-                res.status(400).send(JSON.stringify({"response":"ERROR",message : "Cliente no existe"}),null,2);
+    docClient.scan(paramsScan, function (err, data) {
+        if (err) {
+            res.status(400).send(JSON.stringify({ response: "ERROR", message: "DB access error " + err }));
+            return;
+        }
+
+        if (!data.Items || data.Items.length === 0) {
+            res.status(400).send(JSON.stringify({ "response": "ERROR", message: "Cliente no existe" }));
+            return;
+        }
+
+        const cliente = data.Items[0];
+        const id = cliente.id;
+
+        // Ahora actualizar la password usando el ID
+        const paramsUpdate = {
+            ExpressionAttributeNames: {
+                "#p": "password"
+            },
+            ExpressionAttributeValues: {
+                ":p": password
+            },
+            Key: {
+                "id": id
+            },
+            ReturnValues: "ALL_NEW",
+            TableName: "cliente",
+            UpdateExpression: "SET #p = :p"
+        };
+
+        docClient.update(paramsUpdate, function (err, data) {
+            if (err) {
+                res.status(400).send(JSON.stringify({ response: "ERROR", message: "DB access error " + err }));
                 return;
             } else {
-
-                const paramsUpdate = { 
-   
-                    ExpressionAttributeNames: { 
-                         "#p": "password" 
-                    }, 
-                    ExpressionAttributeValues: { 
-                        ":p": password 
-                   }, 
-                   Key: { 
-                       "id": id 
-                   }, 
-                   ReturnValues: "ALL_NEW", 
-                   TableName: "cliente", 
-                   UpdateExpression: "SET #p = :p" 
-                };
-                docClient.update(paramsUpdate, function (err, data) {
-                    if (err)  {
-                        res.status(400).send(JSON.stringify({response : "ERROR", message : "DB access error "+err}));
-                        return;
-                    } else {
-                        res.status(200).send(JSON.stringify({response : "OK", message : "updated" , "data": data}));
-                    }    
-                });    
+                res.status(200).send(JSON.stringify({ response: "OK", message: "updated", "data": data }));
             }
-        }    
-    })
+        });
+    });
 });
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
 /*                                                       API REST ticket                                                             *

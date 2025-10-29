@@ -8,7 +8,7 @@ const emailInput = document.getElementById('emailInput');
 // Configuración de URLs
 const RESTAPI = {
     resetCliente: "http://localhost:8080/api/resetCliente",
-    getCliente: "http://localhost:8080/api/getCliente/"
+    getClienteByContacto: "http://localhost:8080/api/getClienteByContacto"  // NUEVO ENDPOINT
 };
 
 // Función para verificar si las contraseñas coinciden
@@ -44,13 +44,23 @@ async function checkEmailExists(email) {
     }
 
     try {
-        const response = await fetch(`${RESTAPI.getCliente}${email}`, {
-            method: 'POST'
-        });
+        const checkData = {
+            contacto: email
+        };
+
+        const checkOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(checkData),
+        };
+
+        const response = await fetch(RESTAPI.getClienteByContacto, checkOptions);
 
         if (response.ok) {
             const data = await response.json();
-            return true; // El cliente existe
+            return data.response === "OK"; // El cliente existe
         } else {
             return false; // El cliente no existe
         }
@@ -86,10 +96,10 @@ formE1.addEventListener('submit', async (event) => {
         return;
     }
 
-    // Preparar datos para el servidor
+    // Preparar datos para el servidor - AHORA ENVIAMOS contacto EN LUGAR DE id
     const resetData = {
-        "id": data.email,
-        "password": data.newPassword
+        contacto: data.email,      // CAMBIADO: id -> contacto
+        password: data.newPassword
     };
 
     const options = {
