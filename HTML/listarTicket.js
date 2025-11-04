@@ -1,4 +1,3 @@
-
 /*---
 Función para procesar los parámetros recibidos en el URL
 */
@@ -102,39 +101,52 @@ console.log("options :"+JSON.stringify(options));
 
 fetch(`${APIREST_URL}`,options)
 .then(res => {
+    if (!res.ok) {
+        throw new Error('Error en la respuesta del servidor');
+    }
     return res.json();
-}).then(ticket=>{
-    console.log("ticket:");
+}).then(ticket => {
+    console.log("Respuesta completa del servidor:");
     console.log(ticket);
-    let f=false;
-    let table=document.createElement("table");
-    table.style.border="1px solid";
-    table.style.backgroundColor="##626607";
-//ticket.uresponse.forEach((t)=> { 
-    ticket.data.forEach((t)=> { 
-        console.log(t.clienteID)
-        if (t.clienteID == query.id) {
-            if (f==false) {
-                f=true;
-                const hdr=["Cliente","ID","Motivo","Estado","Fecha"];
-                let tr=document.createElement("tr");
-                tr.style.border="1px solid";
-                hdr.forEach((item) => {
-                    let th=document.createElement("th");
-                    th.style.border="1px solid";
+    
+    let f = false;
+    let table = document.createElement("table");
+    table.style.border = "1px solid";
+    table.style.backgroundColor = "#f0f0f0";
 
+    // Verificar si la respuesta tiene datos y si es un array con elementos
+    if (!ticket || !ticket.data || !Array.isArray(ticket.data) || ticket.data.length === 0) {
+        console.log("No se recibieron tickets del servidor");
+        mostrarMensajeSinTickets();
+        return;
+    }
+
+    // Procesar los tickets recibidos
+    ticket.data.forEach((t) => { 
+        console.log("Procesando ticket:", t);
+        if (t.clienteID == query.id) {
+            if (f == false) {
+                f = true;
+                const hdr = ["Cliente", "ID", "Motivo", "Estado", "Fecha"];
+                let tr = document.createElement("tr");
+                tr.style.border = "1px solid";
+                hdr.forEach((item) => {
+                    let th = document.createElement("th");
+                    th.style.border = "1px solid";
+                    th.style.padding = "8px";
+                    th.style.backgroundColor = "#e0e0e0";
                     th.innerText = item;
                     tr.appendChild(th);
                 });
                 table.appendChild(tr);                   
             }
 
-            const body=[t.clienteID,`${t.id}`,`${t.solucion}`,`${t.estado_solucion}`,`${t.ultimo_contacto}`];
-            
-            let trl=document.createElement("tr");
+            const body = [t.clienteID, `${t.id}`, `${t.solucion}`, `${t.estado_solucion}`, `${t.ultimo_contacto}`];
+            let trl = document.createElement("tr");
             body.forEach((line) => {
-                let td=document.createElement("td");
-                td.style.border="1px solid";
+                let td = document.createElement("td");
+                td.style.border = "1px solid";
+                td.style.padding = "8px";
                 td.innerText = line;
                 trl.appendChild(td);
             });
@@ -143,13 +155,33 @@ fetch(`${APIREST_URL}`,options)
     });
 
     if (f) {
+        console.log("Tabla de tickets creada:");
         console.log(table);
         HTMLResponse.appendChild(table);
+        
+        // Limpiar mensajes previos
+        document.getElementById('mensajes').textContent = "";
     } else {
-
-        console.log("no tiene tickets");
-        document.getElementById('mensajes').style.textAlign = "center";
-        document.getElementById('mensajes').style.color="RED";
-        document.getElementById("mensajes").innerHTML = "No hay tickets pendientes";
+        console.log("El cliente no tiene tickets que coincidan con su ID");
+        mostrarMensajeSinTickets();
     }
+})
+.catch(error => {
+    console.error('Error en la solicitud:', error);
+    document.getElementById('mensajes').style.textAlign = "center";
+    document.getElementById('mensajes').style.color = "RED";
+    document.getElementById("mensajes").innerHTML = "el cliente no tiene tickets asociados todavia: " + error.message;
 });
+
+/*---
+Función para mostrar el mensaje cuando no hay tickets
+*/
+function mostrarMensajeSinTickets() {
+    document.getElementById('mensajes').style.textAlign = "center";
+    document.getElementById('mensajes').style.color = "BLUE";
+    document.getElementById("mensajes").innerHTML = "El cliente no tiene tickets registrados para esta cuenta";
+    
+    // Limpiar cualquier tabla previa
+    const appDiv = document.getElementById('app');
+    appDiv.innerHTML = '';
+}

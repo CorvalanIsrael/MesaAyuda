@@ -125,6 +125,95 @@ formE1.addEventListener('submit', (event) => {
 		API='https://fmtj0jrpp9.execute-api.us-east-1.amazonaws.com/default/loginUserGET?ID=' + data.id + '&PASSWORD=' + data.password;
     	APIoptions = { method: 'GET' };
 	}
+
+	/*-----
+    Realiza el acceso al API Rest utilizando gestión de sincronización mediante promesas
+	utiliza URL y options definidos en los pasos anteriores
+    */
+
+	// fetch(`${API}`, APIoptions)
+	// 	.then((res) => {
+	// 		return res.json();
+	// 	})
+	// 	.then((users) => {
+	// 		console.log(
+	// 			'Datos en respuesta del application server=' + JSON.stringify(users)
+	// 		);
+	// 		console.log('users.response=' + users.password);
+	// 		if (users.response == 'OK') {
+	// 			//<==Habilitar esto para dejar que el API REST verifique sin exponer la password
+	// 			console.log('La password es correcta');
+	// 			console.log(
+	// 				'nombre(' +
+	// 					users.nombre +
+	// 					') fecha_ultimo_ingreso(' +
+	// 					users.fecha_ultimo_ingreso +
+	// 					')' +
+	// 					'mode(' + MODE + ')'
+	// 			);
+	// 			console.log(
+	// 				'id=' +
+	// 					users.id +
+	// 					' nombre=' +
+	// 					users.nombre +
+	// 					' ultimo=' +
+	// 					users.fecha_ultimo_ingreso
+	// 			);
+	// 			console.log(
+	// 				'changing to ' +
+	// 					systemURL.listarTicket +
+	// 					'?id=' +
+	// 					users.id +
+	// 					'&contacto=' +
+	// 					users.contacto +
+	// 					'&nombre=' +
+	// 					users.nombre +
+	// 					'&fecha_ultimo_ingreso=' +
+	// 					users.fecha_ultimo_ingreso +
+	// 					'&mode=' + MODE
+	// 			);
+	// 			window.location.href =
+	// 				systemURL.listarTicket +
+	// 				'?id=' +
+	// 				users.id +
+	// 				'&contacto=' +
+	// 				users.contacto +
+	// 				'&nombre=' +
+	// 				users.nombre +
+	// 				'&fecha_ultimo_ingreso=' +
+	// 				users.fecha_ultimo_ingreso +
+	// 				'&mode=' + MODE;
+	// 		} else {
+	// 			console.log('Login fallido:', users.message);
+				
+	// 			// NUEVO: Mostrar mensajes específicos según el error del servidor
+	// 			if (users.message && (users.message.includes('inválido') || users.message.includes('no existe'))) {
+	// 				document.getElementById('resultado1').style.color = 'RED';
+	// 				document.getElementById('resultado1').textContent =
+	// 					'Usuario no registrado. ¿Desea crear una cuenta?';
+	// 				document.getElementById('registroLink').style.display = 'block';
+	// 			} else if (users.message && (users.message.includes('contraseña') || users.message.includes('incorrecta'))) {
+	// 				document.getElementById('resultado1').style.color = 'RED';
+	// 				document.getElementById('resultado1').textContent =
+	// 					'Contraseña incorrecta. Intente nuevamente.';
+	// 			} else if (users.message && users.message.includes('activo')) {
+	// 				document.getElementById('resultado1').style.color = 'RED';
+	// 				document.getElementById('resultado1').textContent =
+	// 					'Usuario inactivo. Contacte al administrador.';
+	// 			} else {
+	// 				document.getElementById('resultado1').style.color = 'RED';
+	// 				document.getElementById('resultado1').textContent =
+	// 					'Error de login: ' + (users.message || 'Intente nuevamente');
+	// 			}
+	// 		}
+	// 	})
+	// 	.catch((error) => {
+	// 		console.error('Error en la solicitud:', error);
+	// 		document.getElementById('resultado1').style.color = 'RED';
+	// 		document.getElementById('resultado1').textContent = 'Error de conexión con el servidor';
+	// 		document.getElementById('registroLink').style.display = 'block';
+	// 	});
+
 	/*-----
     Realiza el acceso al API Rest utilizando gestión de sincronización mediante promesas
 	utiliza URL y options definidos en los pasos anteriores

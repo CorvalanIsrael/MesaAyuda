@@ -50,12 +50,17 @@ formE1.addEventListener('submit', event => {
     console.log("Datos:", nuevoCliente);
 
     // Enviar solicitud al servidor
+
     fetch(RESTAPI.addCliente, options)
         .then(res => {
-            if (!res.ok) {
-                throw new Error('Error en la respuesta del servidor');
-            }
-            return res.json();
+            // Primero intentamos leer la respuesta como JSON para obtener el mensaje de error del servidor
+            return res.json().then(responseData => {
+                if (!res.ok) {
+                    // Si el status no es OK, lanzamos error con el mensaje del servidor
+                    throw new Error(responseData.message || `Error del servidor: ${res.status} ${res.statusText}`);
+                }
+                return responseData;
+            });
         })
         .then(response => {
             console.log("Respuesta del servidor:", response);
@@ -69,6 +74,7 @@ formE1.addEventListener('submit', event => {
                     window.location.href = "loginClient.html";
                 }, 2000);
             } else {
+                // Manejar caso donde el servidor responde con ERROR pero status 200
                 resultadoEl.style.color = "RED";
                 resultadoEl.textContent = response.message || 'Error en el registro';
             }
@@ -76,6 +82,6 @@ formE1.addEventListener('submit', event => {
         .catch(error => {
             console.error('Error:', error);
             resultadoEl.style.color = "RED";
-            resultadoEl.textContent = 'Error de conexión con el servidor';
+            resultadoEl.textContent = error.message || 'Error de conexión con el servidor';
         });
 });

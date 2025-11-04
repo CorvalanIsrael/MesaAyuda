@@ -280,18 +280,35 @@ Función para realizar el SCAN de un DB de cliente usando contacto como clave pa
 */
 async function scanDb(contacto) {
     var docClient = new AWS.DynamoDB.DocumentClient();
-    const scanKey = contacto;
-    const paramsScan = {
-        TableName: "cliente",
-        Select: "ALL_ATTRIBUTES",
-        FilterExpression: 'id = :contacto',  // CAMBIADO: id -> contacto
-        ExpressionAttributeValues: { ':contacto': scanKey }
-    };
+    const scanKey=contacto;
+    const paramsScan = { // ScanInput
+      TableName: "cliente", // required
+      Select: "ALL_ATTRIBUTES" || "ALL_PROJECTED_ATTRIBUTES" || "SPECIFIC_ATTRIBUTES" || "COUNT",
+      FilterExpression : 'contacto = :contacto',
+      ExpressionAttributeValues : {':contacto' : scanKey}
+    };      
     var objectPromise = await docClient.scan(paramsScan).promise().then((data) => {
-        return data.Items
-    });
+          return data.Items 
+    });  
     return objectPromise;
 }
+
+
+
+// async function scanDb(contacto) {
+//     var docClient = new AWS.DynamoDB.DocumentClient();
+//     const scanKey = contacto;
+//     const paramsScan = {
+//         TableName: "cliente",
+//         Select: "ALL_ATTRIBUTES",
+//         FilterExpression: 'contacto = :contacto',  // CAMBIADO: id -> contacto
+//         ExpressionAttributeValues: { ':contacto': scanKey }
+//     };
+//     var objectPromise = await docClient.scan(paramsScan).promise().then((data) => {
+//         return data.Items
+//     });
+//     return objectPromise;
+// }
 
 /*----
 addCliente

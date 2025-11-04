@@ -11,7 +11,7 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width,initial-scale=1.0">
-        <title>POST Form Data as JSON with JavaScript Fetch API</title>
+        <title>Sistema de Mesa de Ayuda - Listar Tickets</title>
         <style type="text/css"> 
 
             ul.breadcrumb {
@@ -44,6 +44,33 @@
                 color: #01447e;
                 text-decoration: underline;
             }
+
+            /* Estilos adicionales para mejor presentación */
+            #mensajes {
+                margin: 20px 0;
+                padding: 15px;
+                font-size: 18px;
+                font-weight: bold;
+            }
+
+            table {
+                margin: 20px auto;
+                border-collapse: collapse;
+                width: 90%;
+                max-width: 1000px;
+            }
+
+            th, td {
+                padding: 12px;
+                text-align: left;
+            }
+
+            #lastlogin table {
+                margin: 10px auto;
+                border: 1px solid #ccc;
+                padding: 10px;
+                background-color: #f9f9f9;
+            }
             </style>
     </head>
     <body>
@@ -54,7 +81,7 @@
           </ul>
         </center>
         <center><h1>Sistema de Mesa de Ayuda</h1></center>
-        <center><h2>Tickets activos para usuario</h1></center>
+        <center><h2>Tickets activos para usuario</h2></center>
         <center><p id="lastlogin"></p></center>
         <center><p id="mensajes"></p></center>
         <center><div id="app"></div></center>
@@ -63,3 +90,4 @@
         <script src="listarTicket.js" type="module"></script>
     
     </body>
+</html>
