@@ -101,11 +101,20 @@ console.log("options :"+JSON.stringify(options));
 
 fetch(`${APIREST_URL}`,options)
 .then(res => {
-    if (!res.ok) {
-        throw new Error('Error en la respuesta del servidor');
-    }
-    return res.json();
-}).then(ticket => {
+    // Primero intentamos leer la respuesta como JSON para ver si es un error específico del servidor
+    return res.json().then(data => {
+        if (!res.ok) {
+            // Si el status no es OK, pero recibimos una respuesta JSON, la procesamos
+            throw { 
+                type: 'SERVER_ERROR', 
+                message: data.message || 'Error en el servidor',
+                status: res.status 
+            };
+        }
+        return data;
+    });
+})
+.then(ticket => {
     console.log("Respuesta completa del servidor:");
     console.log(ticket);
     
@@ -114,63 +123,98 @@ fetch(`${APIREST_URL}`,options)
     table.style.border = "1px solid";
     table.style.backgroundColor = "#f0f0f0";
 
-    // Verificar si la respuesta tiene datos y si es un array con elementos
-    if (!ticket || !ticket.data || !Array.isArray(ticket.data) || ticket.data.length === 0) {
-        console.log("No se recibieron tickets del servidor");
-        mostrarMensajeSinTickets();
-        return;
-    }
-
-    // Procesar los tickets recibidos
-    ticket.data.forEach((t) => { 
-        console.log("Procesando ticket:", t);
-        if (t.clienteID == query.id) {
-            if (f == false) {
-                f = true;
-                const hdr = ["Cliente", "ID", "Motivo", "Estado", "Fecha"];
-                let tr = document.createElement("tr");
-                tr.style.border = "1px solid";
-                hdr.forEach((item) => {
-                    let th = document.createElement("th");
-                    th.style.border = "1px solid";
-                    th.style.padding = "8px";
-                    th.style.backgroundColor = "#e0e0e0";
-                    th.innerText = item;
-                    tr.appendChild(th);
-                });
-                table.appendChild(tr);                   
-            }
-
-            const body = [t.clienteID, `${t.id}`, `${t.solucion}`, `${t.estado_solucion}`, `${t.ultimo_contacto}`];
-            let trl = document.createElement("tr");
-            body.forEach((line) => {
-                let td = document.createElement("td");
-                td.style.border = "1px solid";
-                td.style.padding = "8px";
-                td.innerText = line;
-                trl.appendChild(td);
-            });
-            table.appendChild(trl);                   
+    // Verificar si la respuesta es del servidor y tiene datos
+    if (ticket.response === "OK") {
+        // Verificar si la respuesta tiene datos y si es un array con elementos
+        if (!ticket.data || !Array.isArray(ticket.data) || ticket.data.length === 0) {
+            console.log("Servidor respondió OK pero no hay datos");
+            mostrarMensajeSinTickets();
+            return;
         }
-    });
 
-    if (f) {
-        console.log("Tabla de tickets creada:");
-        console.log(table);
-        HTMLResponse.appendChild(table);
-        
-        // Limpiar mensajes previos
-        document.getElementById('mensajes').textContent = "";
+        // Procesar los tickets recibidos
+        ticket.data.forEach((t) => { 
+            console.log("Procesando ticket:", t);
+            if (t.clienteID == query.id) {
+                if (f == false) {
+                    f = true;
+                    const hdr = ["Cliente", "ID", "Motivo", "solucion" ,"Estado", "Fecha"];
+                    let tr = document.createElement("tr");
+                    tr.style.border = "1px solid";
+                    hdr.forEach((item) => {
+                        let th = document.createElement("th");
+                        th.style.border = "1px solid";
+                        th.style.padding = "8px";
+                        th.style.backgroundColor = "#e0e0e0";
+                        th.innerText = item;
+                        tr.appendChild(th);
+                    });
+                    table.appendChild(tr);                   
+                }
+
+                const body = [t.clienteID, `${t.id}`, `${t.descripcion}`, `${t.solucion}`, `${t.estado_solucion}`, `${t.ultimo_contacto}`];
+                let trl = document.createElement("tr");
+                body.forEach((line) => {
+                    let td = document.createElement("td");
+                    td.style.border = "1px solid";
+                    td.style.padding = "8px";
+                    td.innerText = line;
+                    trl.appendChild(td);
+                });
+                table.appendChild(trl);                   
+            }
+        });
+
+        if (f) {
+            console.log("Tabla de tickets creada:");
+            console.log(table);
+            HTMLResponse.appendChild(table);
+            
+            // Limpiar mensajes previos
+            document.getElementById('mensajes').textContent = "";
+        } else {
+            console.log("El cliente no tiene tickets que coincidan con su ID");
+            mostrarMensajeSinTickets();
+        }
     } else {
-        console.log("El cliente no tiene tickets que coincidan con su ID");
-        mostrarMensajeSinTickets();
+        // El servidor respondió con ERROR
+        console.log("Servidor respondió con ERROR:", ticket.message);
+        
+        // Si el error es específicamente que no hay tickets, mostrar mensaje amigable
+        if (ticket.message && ticket.message.includes('no tiene tickets')) {
+            mostrarMensajeSinTickets();
+        } else {
+            // Para otros errores del servidor, mostrar el mensaje específico
+            document.getElementById('mensajes').style.textAlign = "center";
+            document.getElementById('mensajes').style.color = "RED";
+            document.getElementById("mensajes").innerHTML = "Error: " + (ticket.message || 'Error desconocido del servidor');
+        }
     }
 })
 .catch(error => {
     console.error('Error en la solicitud:', error);
-    document.getElementById('mensajes').style.textAlign = "center";
-    document.getElementById('mensajes').style.color = "RED";
-    document.getElementById("mensajes").innerHTML = "el cliente no tiene tickets asociados todavia: " + error.message;
+    
+    // Distinguir entre diferentes tipos de error
+    if (error.type === 'SERVER_ERROR') {
+        // Error específico del servidor (ya manejado en el then)
+        if (error.message && error.message.includes('no tiene tickets')) {
+            mostrarMensajeSinTickets();
+        } else {
+            document.getElementById('mensajes').style.textAlign = "center";
+            document.getElementById('mensajes').style.color = "RED";
+            document.getElementById("mensajes").innerHTML = "Error del servidor: " + error.message;
+        }
+    } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        // Error de conexión de red
+        document.getElementById('mensajes').style.textAlign = "center";
+        document.getElementById('mensajes').style.color = "RED";
+        document.getElementById("mensajes").innerHTML = "Error de conexión con el servidor";
+    } else {
+        // Otros errores
+        document.getElementById('mensajes').style.textAlign = "center";
+        document.getElementById('mensajes').style.color = "RED";
+        document.getElementById("mensajes").innerHTML = "Error: " + error.message;
+    }
 });
 
 /*---

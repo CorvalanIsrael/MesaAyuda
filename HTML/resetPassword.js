@@ -1,72 +1,33 @@
 const formE1 = document.querySelector('.form');
-const newPasswordInput = document.getElementById('newPassword');
-const confirmPasswordInput = document.getElementById('confirmPassword');
-const passwordMatchSpan = document.getElementById('passwordMatch');
-const submitBtn = document.getElementById('submitBtn');
-const emailInput = document.getElementById('emailInput');
 
-// Configuración de URLs
-const RESTAPI = {
-    resetCliente: "http://localhost:8080/api/resetCliente",
-    getClienteByContacto: "http://localhost:8080/api/getClienteByContacto"  // NUEVO ENDPOINT
-};
-
-// Función para verificar si las contraseñas coinciden
-function checkPasswordMatch() {
-    const newPassword = newPasswordInput.value;
-    const confirmPassword = confirmPasswordInput.value;
-    
-    if (newPassword === '' && confirmPassword === '') {
-        passwordMatchSpan.textContent = '';
-        passwordMatchSpan.style.color = 'black';
-        return false;
-    }
-    
-    if (newPassword === confirmPassword) {
-        passwordMatchSpan.textContent = '✓ Las contraseñas coinciden';
-        passwordMatchSpan.style.color = 'green';
-        return true;
-    } else {
-        passwordMatchSpan.textContent = '✗ Las contraseñas no coinciden';
-        passwordMatchSpan.style.color = 'red';
-        return false;
-    }
+// Función para mostrar mensajes al usuario
+function mostrarMensaje(mensaje, tipo) {
+    const resultadoEl = document.getElementById('resultado');
+    resultadoEl.style.color = tipo === 'error' ? 'RED' : 'GREEN';
+    resultadoEl.textContent = mensaje;
 }
 
-// Event listeners para verificar coincidencia de contraseñas en tiempo real
-newPasswordInput.addEventListener('input', checkPasswordMatch);
-confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+// Validación en tiempo real de contraseñas
+document.getElementById('newPassword').addEventListener('input', validarContraseñas);
+document.getElementById('confirmPassword').addEventListener('input', validarContraseñas);
 
-// Función para verificar si el email existe en la base de datos
-async function checkEmailExists(email) {
-    if (!email || email.length < 5) {
-        return false;
+function validarContraseñas() {
+    const password = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const mensajeElemento = document.getElementById('passwordMatch');
+    
+    if (confirmPassword === '') {
+        mensajeElemento.textContent = '';
+        mensajeElemento.style.color = 'black';
+        return;
     }
-
-    try {
-        const checkData = {
-            contacto: email
-        };
-
-        const checkOptions = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(checkData),
-        };
-
-        const response = await fetch(RESTAPI.getClienteByContacto, checkOptions);
-
-        if (response.ok) {
-            const data = await response.json();
-            return data.response === "OK"; // El cliente existe
-        } else {
-            return false; // El cliente no existe
-        }
-    } catch (error) {
-        console.error('Error verificando email:', error);
-        return false;
+    
+    if (password === confirmPassword) {
+        mensajeElemento.textContent = '✓ Las contraseñas coinciden';
+        mensajeElemento.style.color = 'green';
+    } else {
+        mensajeElemento.textContent = '✗ Las contraseñas no coinciden';
+        mensajeElemento.style.color = 'red';
     }
 }
 
@@ -75,31 +36,29 @@ formE1.addEventListener('submit', async (event) => {
     const formData = new FormData(formE1);
     const data = Object.fromEntries(formData);
     
-    console.log('Datos del formulario:');
+    console.log('Datos del formulario reset password:');
     console.log(data);
 
-    // Validaciones
-    const resultadoEl = document.getElementById('resultado');
-    
-    // Validar que las contraseñas coincidan
-    if (!checkPasswordMatch()) {
-        resultadoEl.style.color = "RED";
-        resultadoEl.textContent = 'Las contraseñas no coinciden';
+    // Validaciones frontend
+    if (data.newPassword !== data.confirmPassword) {
+        mostrarMensaje('Las contraseñas no coinciden', 'error');
         return;
     }
 
-    // Validar que el email exista en la base de datos
-    const emailExists = await checkEmailExists(data.email);
-    if (!emailExists) {
-        resultadoEl.style.color = "RED";
-        resultadoEl.textContent = 'El email no está registrado en el sistema';
-        return;
-    }
+    // if (data.newPassword.length < 6) {
+    //     mostrarMensaje('La contraseña debe tener al menos 6 caracteres', 'error');
+    //     return;
+    // }
 
-    // Preparar datos para el servidor - AHORA ENVIAMOS contacto EN LUGAR DE id
+    // Configuración de API
+    const RESTAPI = {
+        resetCliente: "http://localhost:8080/api/resetCliente"
+    };
+
+    // Preparar datos para el servidor
     const resetData = {
-        contacto: data.email,      // CAMBIADO: id -> contacto
-        password: data.newPassword
+        "contacto": data.email,
+        "password": data.newPassword
     };
 
     const options = {
@@ -110,45 +69,72 @@ formE1.addEventListener('submit', async (event) => {
         body: JSON.stringify(resetData),
     };
 
-    console.log("Enviando datos al servidor:");
+    console.log("Enviando solicitud de reset password:");
     console.log("URL:", RESTAPI.resetCliente);
     console.log("Datos:", resetData);
 
-    // Deshabilitar el botón para evitar múltiples envíos
+    // Deshabilitar botón durante la solicitud
+    const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Procesando...';
 
-    // Enviar solicitud al servidor
-    fetch(RESTAPI.resetCliente, options)
-        .then(res => {
-            if (!res.ok) {
-                throw new Error('Error en la respuesta del servidor');
-            }
-            return res.json();
-        })
-        .then(response => {
-            console.log("Respuesta del servidor:", response);
+    try {
+        // Enviar solicitud al servidor
+        const response = await fetch(RESTAPI.resetCliente, options);
+        
+        // Intentar parsear la respuesta como JSON
+        let responseData;
+        try {
+            responseData = await response.json();
+        } catch (parseError) {
+            console.error('Error parseando respuesta JSON:', parseError);
+            throw new Error('Error en la respuesta del servidor: formato inválido');
+        }
+
+        console.log("Respuesta completa del servidor:", responseData);
+
+        if (!response.ok) {
+            // Error HTTP (4xx, 5xx)
+            const errorMessage = responseData.message || 
+                                responseData.response || 
+                                `Error del servidor: ${response.status} ${response.statusText}`;
+            throw new Error(errorMessage);
+        }
+
+        if (responseData.response === 'OK') {
+            mostrarMensaje('Contraseña restablecida exitosamente. Redirigiendo al login...', 'success');
             
-            if (response.response === 'OK') {
-                resultadoEl.style.color = "GREEN";
-                resultadoEl.textContent = 'Contraseña restablecida exitosamente. Redirigiendo al login...';
-                
-                // Redirigir al login después de 2 segundos
-                setTimeout(() => {
-                    window.location.href = "loginClient.html";
-                }, 2000);
-            } else {
-                resultadoEl.style.color = "RED";
-                resultadoEl.textContent = response.message || 'Error al restablecer la contraseña';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Restablecer Contraseña';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            resultadoEl.style.color = "RED";
-            resultadoEl.textContent = 'Error de conexión con el servidor';
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Restablecer Contraseña';
-        });
+            // Redirigir al login después de 2 segundos
+            setTimeout(() => {
+                window.location.href = "loginClient.html";
+            }, 2000);
+        } else {
+            // Servidor respondió con ERROR pero status 200
+            throw new Error(responseData.message || 'Error al restablecer la contraseña');
+        }
+
+    } catch (error) {
+        console.error('Error en reset password:', error);
+        
+        // Clasificar y mostrar el error adecuadamente
+        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+            mostrarMensaje('Error de conexión: No se pudo contactar al servidor. Verifique su conexión a internet.', 'error');
+        } else if (error.message.includes ('NetworkError when attempting to fetch')) {
+            mostrarMensaje('error de conexión con el servidor', 'error');
+        } else if (error.message.includes('Cliente no existe')) {
+            mostrarMensaje('Error: El email proporcionado no está registrado en el sistema.', 'error');
+        } else if (error.message.includes('Contacto no informado')) {
+            mostrarMensaje('Error: Debe proporcionar un email válido.', 'error');
+        } else if (error.message.includes('Password no informada')) {
+            mostrarMensaje('Error: La contraseña no puede estar vacía.', 'error');
+        } else if (error.message.includes('DB access error')) {
+            mostrarMensaje('Error temporal del sistema. Por favor, intente nuevamente.', 'error');
+        } else {
+            mostrarMensaje(error.message || 'Error desconocido al restablecer la contraseña', 'error');
+        }
+    } finally {
+        // Rehabilitar botón
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Restablecer Contraseña';
+    }
 });

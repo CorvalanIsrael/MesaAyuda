@@ -1,5 +1,86 @@
 const formE1 = document.querySelector('.form');
 
+// =============================================
+// FUNCIONES MEJORADAS PARA CARGA DE EMAIL
+// =============================================
+
+// Función para cargar email pendiente
+// Función para cargar email pendiente CON LOGS DE DIAGNÓSTICO
+function loadPendingEmail() {
+    try {
+        console.log('🔍 Buscando datos en sessionStorage...');
+        const pendingData = sessionStorage.getItem('pendingRegistration');
+        console.log('📦 Datos encontrados en sessionStorage:', pendingData);
+        
+        if (pendingData) {
+            const registration = JSON.parse(pendingData);
+            console.log('📋 Datos parseados:', registration);
+            
+            const now = Date.now();
+            const tenMinutes = 10 * 60 * 1000;
+            
+            // Verificar que no haya expirado (10 minutos)
+            if (now - registration.timestamp < tenMinutes) {
+                const emailInput = document.getElementById('email');
+                console.log('🎯 Campo email encontrado:', emailInput);
+                
+                if (emailInput) {
+                    emailInput.value = registration.email;
+                    console.log('✅ Email prellenado:', registration.email);
+                    
+                    // Mejorar UX: enfocar campo de contraseña
+                    setTimeout(() => {
+                        const passwordInput = document.querySelector('input[type="password"]');
+                        if (passwordInput) {
+                            passwordInput.focus();
+                            console.log('🎯 Campo contraseña enfocado');
+                        }
+                    }, 100);
+                    
+                    return true;
+                } else {
+                    console.log('❌ No se encontró el campo email con id="email"');
+                }
+            } else {
+                // Limpiar si expiró
+                console.log('⏰ Datos expirados, limpiando...');
+                sessionStorage.removeItem('pendingRegistration');
+            }
+        } else {
+            console.log('❌ No hay datos pendientes en sessionStorage');
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('💥 Error cargando email pendiente:', error);
+        return false;
+    }
+}
+
+// Al cargar la página, con logs adicionales
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Página de registro cargada - iniciando carga de email...');
+    const resultado = loadPendingEmail();
+    console.log('📊 Resultado de carga de email:', resultado);
+});
+// Función para limpiar datos pendientes después de registro exitoso
+function clearPendingRegistration() {
+    sessionStorage.removeItem('pendingRegistration');
+}
+
+// =============================================
+// EJECUCIÓN AL CARGAR LA PÁGINA
+// =============================================
+
+// Al cargar la página, intentar cargar el email pendiente
+document.addEventListener('DOMContentLoaded', function() {
+    loadPendingEmail();
+});
+
+// =============================================
+// MANEJADOR DEL FORMULARIO (EXISTENTE - MODIFICADO)
+// =============================================
+
 formE1.addEventListener('submit', event => {
     event.preventDefault();
     const formData = new FormData(formE1);
@@ -50,7 +131,6 @@ formE1.addEventListener('submit', event => {
     console.log("Datos:", nuevoCliente);
 
     // Enviar solicitud al servidor
-
     fetch(RESTAPI.addCliente, options)
         .then(res => {
             // Primero intentamos leer la respuesta como JSON para obtener el mensaje de error del servidor
@@ -68,6 +148,11 @@ formE1.addEventListener('submit', event => {
             if (response.response === 'OK') {
                 resultadoEl.style.color = "GREEN";
                 resultadoEl.textContent = 'Registro exitoso. Redirigiendo al login...';
+                
+                // =============================================
+                // NUEVO: LIMPIAR DATOS PENDIENTES DESPUÉS DE REGISTRO EXITOSO
+                // =============================================
+                clearPendingRegistration();
                 
                 // Redirigir al login después de 2 segundos
                 setTimeout(() => {
